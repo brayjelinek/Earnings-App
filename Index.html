@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marija's Money Dash 🐾</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts & FontAwesome Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f0f9ff;
+    }
+    .font-fredoka {
+      font-family: 'Fredoka', cursive, sans-serif;
+    }
+    .card-hover {
+      transition: all 0.2s ease-in-out;
+    }
+    .card-hover:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.2);
+    }
+  </style>
+</head>
+<body class="bg-sky-50 text-slate-800 min-h-screen pb-12">
+
+  <!-- TOP NAVIGATION HEADER -->
+  <header class="bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 text-white shadow-lg sticky top-0 z-40">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <div class="bg-white/20 p-2 rounded-2xl text-2xl backdrop-blur-sm">
+          🐶
+        </div>
+        <div>
+          <h1 class="font-fredoka text-xl sm:text-2xl font-bold tracking-wide flex items-center gap-2">
+            Marija's Money Dash <span class="text-xs bg-sky-300 text-sky-900 px-2 py-0.5 rounded-full font-sans">v3.0</span>
+          </h1>
+          <p class="text-xs text-sky-100 flex items-center gap-1">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Sync Code: <strong id="headerSyncCode" class="font-mono bg-sky-700/50 px-1.5 py-0.5 rounded text-white">Earn</strong>
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <button onclick="openInstallGuideModal()" class="bg-sky-400/30 hover:bg-sky-400/50 text-white text-xs px-3 py-2 rounded-xl border border-sky-300/40 flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-download"></i>
+          <span class="hidden sm:inline">Install Guide</span>
+        </button>
+        <button id="viewToggleBtn" onclick="promptParentPin()" class="bg-white text-sky-700 hover:bg-sky-50 font-bold text-xs sm:text-sm px-3.5 py-2 rounded-xl shadow-md border border-sky-100 flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-lock"></i>
+          <span>Parent Admin</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-4xl mx-auto px-4 pt-6 space-y-6">
+
+    <!-- BALANCE SUMMARY CARDS -->
+    <div class="grid grid-cols-3 gap-3 sm:gap-4">
+      <!-- Total Earnings -->
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-sky-100 flex flex-col justify-between card-hover">
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Earned</span>
+          <span class="p-1.5 bg-blue-50 text-blue-500 rounded-lg text-xs"><i class="fa-solid fa-wallet"></i></span>
+        </div>
+        <div class="mt-2">
+          <p id="totalEarningsDisplay" class="font-fredoka text-xl sm:text-3xl font-bold text-slate-800">$0.00</p>
+          <span class="text-[10px] text-slate-400">All-time completions</span>
+        </div>
+      </div>
+
+      <!-- Spending Allocation (60%) -->
+      <div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-4 rounded-2xl shadow-md text-white flex flex-col justify-between card-hover">
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-semibold text-emerald-100 uppercase tracking-wider">Spend (60%)</span>
+          <span class="p-1.5 bg-white/20 text-white rounded-lg text-xs">🐱</span>
+        </div>
+        <div class="mt-2">
+          <p id="spendingDisplay" class="font-fredoka text-xl sm:text-3xl font-bold">$0.00</p>
+          <span class="text-[10px] text-emerald-100">Available to cash out</span>
+        </div>
+      </div>
+
+      <!-- Savings Allocation (40%) -->
+      <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-4 rounded-2xl shadow-md text-white flex flex-col justify-between card-hover">
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-semibold text-blue-100 uppercase tracking-wider">Save (40%)</span>
+          <span class="p-1.5 bg-white/20 text-white rounded-lg text-xs">🐬</span>
+        </div>
+        <div class="mt-2">
+          <p id="savingsDisplay" class="font-fredoka text-xl sm:text-3xl font-bold">$0.00</p>
+          <span class="text-[10px] text-blue-100">Growing for big goals</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARENT ADMIN SECTION (HIDDEN BY DEFAULT) -->
+    <div id="parentAdminSection" class="hidden bg-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-6 border border-slate-700 animate-fadeIn">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+        <div class="flex items-center space-x-2">
+          <span class="bg-amber-500/20 text-amber-400 p-2 rounded-xl text-lg">🛡️</span>
+          <div>
+            <h2 class="font-fredoka text-lg font-bold text-white">Parent Admin Panel</h2>
+            <p class="text-xs text-slate-400">Review requests, approve jobs & balance adjustments</p>
+          </div>
+        </div>
+        <button onclick="lockParentAdmin()" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition">
+          <span>👧 Switch to Kid View</span>
+        </button>
+      </div>
+
+      <!-- Pending Approval Queue -->
+      <div class="space-y-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <i class="fa-solid fa-clock text-amber-400"></i> Pending Submissions (<span id="pendingCount">0</span>)
+        </h3>
+        <div id="pendingContainer" class="space-y-2">
+          <!-- Pending items inserted dynamically -->
+        </div>
+      </div>
+
+      <!-- Quick Manual Balance Adjustment -->
+      <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700 space-y-3">
+        <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Manual Balance Adjustment</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input id="adminAdjTitle" type="text" placeholder="Reason (e.g. Allowance, Gift)" class="bg-slate-900 border border-slate-700 text-xs text-white p-2.5 rounded-xl focus:outline-none focus:border-sky-500">
+          <input id="adminAdjAmount" type="number" step="0.50" placeholder="Amount ($)" class="bg-slate-900 border border-slate-700 text-xs text-white p-2.5 rounded-xl focus:outline-none focus:border-sky-500">
+          <button onclick="handleAdminManualAdj()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs py-2.5 px-4 rounded-xl transition">
+            + Add Credit
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RULE BANNER -->
+    <div class="bg-amber-500/10 border border-amber-500/30 p-3.5 rounded-2xl flex items-center gap-3 text-amber-900 text-xs sm:text-sm">
+      <span class="text-lg">📌</span>
+      <p><strong>Monthly Rule:</strong> Each job can only be completed <strong>1 time per month</strong>! Select a job below or submit a custom achievement.</p>
+    </div>
+
+    <!-- TASK SUBMISSION CONTAINER -->
+    <div class="bg-white rounded-3xl shadow-sm border border-sky-100 overflow-hidden">
+      <!-- NAVIGATION TABS -->
+      <div class="flex border-b border-sky-100 bg-sky-50/50 p-1.5 gap-1">
+        <button id="tabPresetBtn" onclick="switchTab('preset')" class="flex-1 py-3 text-xs sm:text-sm font-bold rounded-2xl transition bg-white text-sky-600 shadow-sm flex justify-center items-center gap-2">
+          <span>🧹</span> Quick Jobs
+        </button>
+        <button id="tabCustomBtn" onclick="switchTab('custom')" class="flex-1 py-3 text-xs sm:text-sm font-bold text-slate-500 hover:text-slate-700 rounded-2xl transition flex justify-center items-center gap-2">
+          <span>✨</span> Custom Request
+        </button>
+      </div>
+
+      <div class="p-5 sm:p-6">
+        <!-- PRESET JOBS TAB CONTENT -->
+        <div id="presetTabContent" class="space-y-4">
+          <h2 class="font-fredoka text-lg font-bold text-slate-800 flex items-center gap-2">
+            <span>🐾</span> Available Jobs
+          </h2>
+          <div id="jobsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Jobs will be generated dynamically -->
+          </div>
+        </div>
+
+        <!-- CUSTOM REQUEST TAB CONTENT -->
+        <div id="customTabContent" class="hidden space-y-4">
+          <h2 class="font-fredoka text-lg font-bold text-slate-800 flex items-center gap-2">
+            <span>✨</span> Log Custom Job or Request
+          </h2>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Job or Achievement Title</label>
+              <input id="customTitle" type="text" placeholder="e.g. Cleaned garage, 100% on Math Test" class="w-full text-sm p-3 border border-sky-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Suggested Reward ($)</label>
+                <input id="customValue" type="number" step="0.5" placeholder="5.00" class="w-full text-sm p-3 border border-sky-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Animal Sticker</label>
+                <select id="customAnimal" class="w-full text-sm p-3 border border-sky-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400">
+                  <option value="🐶">🐶 Puppy</option>
+                  <option value="🐱">🐱 Kitten</option>
+                  <option value="🦊">🦊 Fox</option>
+                  <option value="🐼">🐼 Panda</option>
+                  <option value="🐬">🐬 Dolphin</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Notes / Details for Dad</label>
+              <textarea id="customNote" rows="2" placeholder="Tell Dad how it went..." class="w-full text-sm p-3 border border-sky-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400"></textarea>
+            </div>
+            <button onclick="handleCustomSubmit()" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold py-3.5 rounded-xl shadow-md hover:from-sky-600 hover:to-blue-700 transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>Submit Request for Approval</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSACTION HISTORY AUDIT LOG -->
+    <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-sky-100 space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="font-fredoka text-lg font-bold text-slate-800 flex items-center gap-2">
+          <span>📜</span> History & Audit Log
+        </h2>
+        <span class="text-xs text-slate-400 font-medium">Auto-calculated</span>
+      </div>
+
+      <div id="historyList" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+        <!-- History items inserted here -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- PIN MODAL -->
+  <div id="pinModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white p-6 rounded-3xl max-w-xs w-full shadow-2xl space-y-4 text-center">
+      <div class="text-3xl">🔒</div>
+      <h3 class="font-fredoka text-lg font-bold text-slate-800">Parent Access PIN</h3>
+      <p class="text-xs text-slate-500">Enter the parent PIN to open admin mode.</p>
+      <input id="parentPinInput" type="password" maxlength="6" class="w-full text-center text-2xl font-mono tracking-widest p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500">
+      <div class="flex gap-2">
+        <button onclick="closePinModal()" class="flex-1 text-xs py-2.5 text-slate-500 hover:bg-slate-100 rounded-xl">Cancel</button>
+        <button onclick="verifyPin()" class="flex-1 text-xs font-bold py-2.5 bg-sky-500 text-white rounded-xl hover:bg-sky-600">Unlock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUCCESS NOTIFICATION MODAL -->
+  <div id="requestSuccessModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white p-6 rounded-3xl max-w-sm w-full shadow-2xl space-y-4 text-center">
+      <div class="text-4xl">🎉</div>
+      <h3 class="font-fredoka text-xl font-bold text-slate-800">Great Job, Marija!</h3>
+      <p id="requestSuccessMessage" class="text-xs text-slate-600 leading-relaxed"></p>
+      <button onclick="closeRequestSuccessModal()" class="w-full text-xs font-bold py-3 bg-sky-500 text-white rounded-xl hover:bg-sky-600 transition">Awesome!</button>
+    </div>
+  </div>
+
+  <!-- INSTALL GUIDE MODAL -->
+  <div id="installModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white p-6 rounded-3xl max-w-md w-full shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-fredoka text-lg font-bold text-slate-800">📲 Save & Install Guide</h3>
+        <button onclick="closeInstallGuideModal()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+      </div>
+      <div class="text-xs text-slate-600 space-y-3">
+        <p><strong>On iPad / iPhone (Safari):</strong></p>
+        <ol class="list-decimal pl-4 space-y-1">
+          <li>Tap the <strong>Share</strong> icon (square with arrow up).</li>
+          <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+          <li>It creates an app icon right on your screen!</li>
+        </ol>
+        <p><strong>Cloud Sync:</strong> Both iPad and Phone connect using room code <strong class="bg-sky-100 text-sky-800 px-1 rounded">Earn</strong>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC SCRIPT -->
+  <script>
+    // --- APP CONSTANTS & KEYS ---
+    const PARENT_PIN = "6328";
+    const PARENT_EMAIL = "brayjelinek@gmail.com";
+    const EMAILJS_SERVICE = "service_tr2alys";
+    const EMAILJS_TEMPLATE = "template_334prep";
+    const EMAILJS_KEY = "CAHdg2fYUFAlhOx2h";
+
+    // --- PRESET JOBS LIST ---
+    const PRESET_JOBS = [
+      { id: 'job_rake', title: 'Rake front yard/stairs', value: 8.00, icon: '🍂' },
+      { id: 'job_bath', title: 'Clean bathroom', value: 8.00, icon: '🧼' },
+      { id: 'job_laund', title: 'Your laundry', value: 5.00, icon: '🧺' },
+      { id: 'job_din', title: 'Assist with dinner', value: 0.00, icon: '🍲' },
+      { id: 'job_paper', title: '1 page written paper on any topic', value: 10.00, icon: '📝' },
+      { id: 'job_app', title: 'Create an app', value: 15.00, icon: '💻' },
+      { id: 'job_vol', title: 'Volunteer', value: 0.00, icon: '🤝' },
+      { id: 'job_trash', title: 'Pick up trash from yard', value: 3.00, icon: '🧹' },
+      { id: 'job_dish', title: 'Do dishes (sink full)', value: 5.00, icon: '🍽️' },
+      { id: 'job_work', title: '3 worksheet pages', value: 5.00, icon: '📚' }
+    ];
+
+    // --- APP DATA STRUCTURE ---
+    let appData = {
+      history: [],
+      pending: []
+    };
+
+    let currentSyncCode = "Earn";
+
+    // Global Error Interceptor
+    window.onerror = function(msg, url, line) {
+      console.warn('Interception suppressed:', msg);
+      return true;
+    };
+
+    // --- INITIALIZATION ---
+    window.onload = function() {
+      try {
+        if (typeof emailjs !== 'undefined') emailjs.init(EMAILJS_KEY);
+      } catch (e) {
+        console.warn('EmailJS init skipped');
+      }
+      loadLocalData();
+      renderAll();
+    };
+
+    function sanitizeAppData() {
+      if (!appData) appData = {};
+      if (!Array.isArray(appData.history)) appData.history = [];
+      if (!Array.isArray(appData.pending)) appData.pending = [];
+    }
+
+    function loadLocalData() {
+      const stored = localStorage.getItem('marija_money_dash_data');
+      if (stored) {
+        try {
+          appData = JSON.parse(stored);
+        } catch (e) {
+          console.error('Data parse error', e);
+        }
+      }
+      sanitizeAppData();
+    }
+
+    function saveData() {
+      sanitizeAppData();
+      localStorage.setItem('marija_money_dash_data', JSON.stringify(appData));
+    }
+
+    // --- CALCULATIONS & RENDERING ---
+    function renderAll() {
+      sanitizeAppData();
+
+      // Calculate Total Earned
+      const totalEarned = appData.history.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+      const spending = totalEarned * 0.60;
+      const savings = totalEarned * 0.40;
+
+      // Update Header Display
+      document.getElementById('totalEarningsDisplay').innerText = `$${totalEarned.toFixed(2)}`;
+      document.getElementById('spendingDisplay').innerText = `$${spending.toFixed(2)}`;
+      document.getElementById('savingsDisplay').innerText = `$${savings.toFixed(2)}`;
+
+      renderJobsGrid();
+      renderPendingList();
+      renderHistoryList();
+    }
+
+    function renderJobsGrid() {
+      const container = document.getElementById('jobsGrid');
+      if (!container) return;
+
+      container.innerHTML = PRESET_JOBS.map(job => `
+        <div class="p-3.5 bg-sky-50/60 border border-sky-100 rounded-2xl flex justify-between items-center card-hover">
+          <div class="flex items-center space-x-3">
+            <span class="text-2xl">${job.icon}</span>
+            <div>
+              <p class="text-xs font-bold text-slate-800">${job.title}</p>
+              <p class="text-[11px] font-semibold text-sky-600">$${job.value.toFixed(2)}</p>
+            </div>
+          </div>
+          <button onclick="logPresetChore('${job.id}')" class="bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm transition">
+            Complete
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function renderPendingList() {
+      const container = document.getElementById('pendingContainer');
+      const countEl = document.getElementById('pendingCount');
+      if (!container) return;
+
+      countEl.innerText = appData.pending.length;
+
+      if (appData.pending.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-500 italic">No pending submissions right now.</p>`;
+        return;
+      }
+
+      container.innerHTML = appData.pending.map((item, idx) => `
+        <div class="bg-slate-800 border border-slate-700 p-3 rounded-2xl flex justify-between items-center text-xs">
+          <div>
+            <p class="font-bold text-white">${item.icon || '✨'} ${item.title}</p>
+            <p class="text-slate-400">$${Number(item.value).toFixed(2)} — ${item.note || 'No notes'}</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="approvePending(${idx})" class="bg-emerald-500 text-slate-950 font-bold px-3 py-1 rounded-xl">Approve</button>
+            <button onclick="rejectPending(${idx})" class="bg-rose-500 text-white font-bold px-2 py-1 rounded-xl">&times;</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderHistoryList() {
+      const container = document.getElementById('historyList');
+      if (!container) return;
+
+      if (appData.history.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 italic">No history logged yet.</p>`;
+        return;
+      }
+
+      container.innerHTML = appData.history.slice().reverse().map(item => `
+        <div class="p-3 bg-slate-50 border border-slate-100 rounded-2xl flex justify-between items-center text-xs">
+          <div class="flex items-center space-x-2">
+            <span>${item.icon || '✅'}</span>
+            <div>
+              <p class="font-semibold text-slate-800">${item.title}</p>
+              <p class="text-[10px] text-slate-400">${item.date || 'Recent'}</p>
+            </div>
+          </div>
+          <span class="font-bold text-emerald-600">+$${Number(item.value).toFixed(2)}</span>
+        </div>
+      `).join('');
+    }
+
+    // --- ACTIONS & SUBMISSIONS ---
+    function logPresetChore(jobId) {
+      const job = PRESET_JOBS.find(j => j.id === jobId);
+      if (!job) return;
+
+      const newItem = {
+        title: job.title,
+        value: job.value,
+        icon: job.icon,
+        date: new Date().toLocaleDateString()
+      };
+
+      appData.history.push(newItem);
+      saveData();
+      renderAll();
+      showRequestSuccessModal(job.title, false);
+    }
+
+    function handleCustomSubmit() {
+      const title = document.getElementById('customTitle').value.trim();
+      const val = parseFloat(document.getElementById('customValue').value) || 0;
+      const animal = document.getElementById('customAnimal').value;
+      const note = document.getElementById('customNote').value.trim();
+
+      if (!title) {
+        alert('Please enter a request title!');
+        return;
+      }
+
+      const pendingItem = {
+        title,
+        value: val,
+        icon: animal,
+        note,
+        date: new Date().toLocaleDateString()
+      };
+
+      appData.pending.push(pendingItem);
+      saveData();
+      renderAll();
+
+      document.getElementById('customTitle').value = '';
+      document.getElementById('customValue').value = '';
+      document.getElementById('customNote').value = '';
+
+      dispatchEmail(title, val, note);
+      showRequestSuccessModal(title, true);
+    }
+
+    function dispatchEmail(title, value, note) {
+      if (typeof emailjs === 'undefined') return;
+
+      const payload = {
+        to_email: PARENT_EMAIL,
+        user_email: PARENT_EMAIL,
+        message: `Marija submitted custom request: "${title}" for $${value.toFixed(2)}. Note: ${note}`,
+        task_name: title,
+        amount: value,
+        notes: note,
+        kid_name: "Marija"
+      };
+
+      emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, payload)
+        .catch(err => console.warn('Background email status:', err));
+    }
+
+    function approvePending(idx) {
+      const item = appData.pending[idx];
+      if (!item) return;
+
+      appData.history.push(item);
+      appData.pending.splice(idx, 1);
+      saveData();
+      renderAll();
+    }
+
+    function rejectPending(idx) {
+      appData.pending.splice(idx, 1);
+      saveData();
+      renderAll();
+    }
+
+    function handleAdminManualAdj() {
+      const title = document.getElementById('adminAdjTitle').value.trim() || 'Parent Adjustment';
+      const val = parseFloat(document.getElementById('adminAdjAmount').value) || 0;
+
+      if (val === 0) return;
+
+      appData.history.push({
+        title,
+        value: val,
+        icon: '🛡️',
+        date: new Date().toLocaleDateString()
+      });
+
+      document.getElementById('adminAdjTitle').value = '';
+      document.getElementById('adminAdjAmount').value = '';
+
+      saveData();
+      renderAll();
+    }
+
+    // --- UI HELPERS & MODALS ---
+    function switchTab(tab) {
+      const presetTab = document.getElementById('presetTabContent');
+      const customTab = document.getElementById('customTabContent');
+      const presetBtn = document.getElementById('tabPresetBtn');
+      const customBtn = document.getElementById('tabCustomBtn');
+
+      if (tab === 'preset') {
+        presetTab.classList.remove('hidden');
+        customTab.classList.add('hidden');
+        presetBtn.className = 'flex-1 py-3 text-xs sm:text-sm font-bold rounded-2xl transition bg-white text-sky-600 shadow-sm flex justify-center items-center gap-2';
+        customBtn.className = 'flex-1 py-3 text-xs sm:text-sm font-bold text-slate-500 hover:text-slate-700 rounded-2xl transition flex justify-center items-center gap-2';
+      } else {
+        customTab.classList.remove('hidden');
+        presetTab.classList.add('hidden');
+        customBtn.className = 'flex-1 py-3 text-xs sm:text-sm font-bold rounded-2xl transition bg-white text-sky-600 shadow-sm flex justify-center items-center gap-2';
+        presetBtn.className = 'flex-1 py-3 text-xs sm:text-sm font-bold text-slate-500 hover:text-slate-700 rounded-2xl transition flex justify-center items-center gap-2';
+      }
+    }
+
+    function promptParentPin() {
+      document.getElementById('pinModal').classList.remove('hidden');
+      document.getElementById('parentPinInput').value = '';
+    }
+
+    function closePinModal() {
+      document.getElementById('pinModal').classList.add('hidden');
+    }
+
+    function verifyPin() {
+      const val = document.getElementById('parentPinInput').value;
+      if (val === PARENT_PIN) {
+        document.getElementById('parentAdminSection').classList.remove('hidden');
+        closePinModal();
+      } else {
+        alert('Incorrect PIN!');
+      }
+    }
+
+    function lockParentAdmin() {
+      document.getElementById('parentAdminSection').classList.add('hidden');
+    }
+
+    function showRequestSuccessModal(title, isPending) {
+      const msg = isPending 
+        ? `Your request "${title}" was submitted and saved! Dad was notified.`
+        : `Job "${title}" logged successfully!`;
+      document.getElementById('requestSuccessMessage').innerText = msg;
+      document.getElementById('requestSuccessModal').classList.remove('hidden');
+    }
+
+    function closeRequestSuccessModal() {
+      document.getElementById('requestSuccessModal').classList.add('hidden');
+    }
+
+    function openInstallGuideModal() {
+      document.getElementById('installModal').classList.remove('hidden');
+    }
+
+    function closeInstallGuideModal() {
+      document.getElementById('installModal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
